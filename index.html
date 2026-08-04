@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pip's Way · Smart Department Navigator</title>
+  
+  <!-- Typography Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- External QRCode.js Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  
+  <!-- Modular Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- Header Navigation Bar -->
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-badge">🐣</div>
+    <div>
+      <h1>Pip's Way</h1>
+      <p>Smart Department Navigator · Proof of Concept</p>
+    </div>
+  </div>
+  <div class="floor-tabs" id="floorTabs"></div>
+</div>
+
+<!-- Main Application Layout -->
+<div class="layout">
+  <!-- Left Navigation Panel -->
+  <div class="card">
+    <div class="panel-title">🧭 Plan your route</div>
+
+    <div class="field-label">📍 I am starting at…</div>
+    <div class="search-wrap">
+      <input class="search-input" id="fromInput" placeholder="Search a room, e.g. Store Room" autocomplete="off"/>
+      <div class="search-results" id="fromResults"></div>
+    </div>
+    <div class="chosen-chip empty" id="fromChip">Nothing selected yet</div>
+    <button class="qr-btn" id="qrBtn">📷 Scan QR to detect my location</button>
+    <button class="qr-btn" id="qrGenBtn" style="margin-top:8px;">🖨️ Generate location QR codes</button>
+
+    <div class="swap-row">
+      <button class="swap-btn" id="swapBtn" title="Swap">⇅</button>
+    </div>
+
+    <div class="field-label">🎯 I want to go to…</div>
+    <div class="search-wrap">
+      <input class="search-input" id="toInput" placeholder="Search a room, e.g. AIML Lab 2" autocomplete="off"/>
+      <div class="search-results" id="toResults"></div>
+    </div>
+    <div class="chosen-chip empty" id="toChip">Nothing selected yet</div>
+
+    <button class="go-btn" id="goBtn" disabled>🐾 Find my way</button>
+
+    <!-- Route Turn-by-Turn Card -->
+    <div class="route-card" id="routeCard">
+      <div class="field-label">Route found</div>
+      <div class="route-stats">
+        <div class="stat"><b id="statSteps">–</b><span>waypoints</span></div>
+        <div class="stat"><b id="statDist">–</b><span>meters~</span></div>
+        <div class="stat"><b id="statTime">–</b><span>min walk</span></div>
+      </div>
+      <ol class="steps" id="stepsList"></ol>
+    </div>
+
+    <!-- Category Legend -->
+    <div class="legend" id="legend"></div>
+  </div>
+
+  <!-- Right Floor Plan Map Display -->
+  <div class="card map-card">
+    <div class="map-header">
+      <h2>Ground Floor</h2>
+      <div class="sub" id="mapSub">Tap any room to preview · search on the left to route</div>
+    </div>
+    <div class="map-scroll">
+      <svg id="floorplan" viewBox="0 0 1594 2255" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+  </div>
+</div>
+
+<footer>Ground floor is a live proof of concept · graph-based A* pathfinding · architecture scales to all 5 floors, with stairwells linking each level 🌿</footer>
+
+<!-- Staircase Lock Modal -->
+<div class="lock-modal" id="lockModal">
+  <div class="lock-box">
+    <div class="emoji">🔒🪜</div>
+    <h3 id="lockTitle">This staircase continues upward</h3>
+    <p id="lockText">Multi-floor routing is on the roadmap — for this proof of concept, only the Ground Floor graph is wired up.</p>
+    <button onclick="document.getElementById('lockModal').classList.remove('show')">Got it</button>
+  </div>
+</div>
+
+<!-- Location QR Generator Modal -->
+<div class="lock-modal" id="qrGenModal">
+  <div class="lock-box" style="max-width:560px;">
+    <h3 style="margin-bottom:4px;">🖨️ Location QR codes</h3>
+    <p style="margin-top:0;">Print one of these and stick it up at the matching spot. Scanning it opens Pip's Way with "I am starting at…" already filled in — no typing needed.</p>
+    <div id="qrGenGrid" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:14px; text-align:left; max-height:52vh; overflow-y:auto; margin-bottom:10px;"></div>
+    <button onclick="document.getElementById('qrGenModal').classList.remove('show')">Close</button>
+  </div>
+</div>
+
+<!-- Toast Notification -->
+<div class="toast" id="toast"></div>
+
+<!-- Application Main JavaScript Module -->
+<script type="module" src="script.js"></script>
+
+</body>
+</html>

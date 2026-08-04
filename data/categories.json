@@ -1,0 +1,42 @@
+{
+  "office": {
+    "label": "Office / Admin",
+    "color": "#FCE9BE",
+    "dot": "#E7C77E"
+  },
+  "facility": {
+    "label": "Shared Facility",
+    "color": "#F3E4FB",
+    "dot": "#C9A3E8"
+  },
+  "academic": {
+    "label": "Academic Dept.",
+    "color": "#D9F0E8",
+    "dot": "#7FC9AE"
+  },
+  "lab": {
+    "label": "Lab / Classroom",
+    "color": "#DCEBFC",
+    "dot": "#8FBBE8"
+  },
+  "washroom": {
+    "label": "Washroom",
+    "color": "#E7E9EE",
+    "dot": "#AEB4C2"
+  },
+  "stair": {
+    "label": "Staircase",
+    "color": "#EFE7DA",
+    "dot": "#B99A63"
+  },
+  "entrance": {
+    "label": "Entrance",
+    "color": "#FBD9E3",
+    "dot": "#E38FAE"
+  },
+  "courtyard": {
+    "label": "Courtyard (open-air)",
+    "color": "#F7FAFC",
+    "dot": "#C4CFD6"
+  }
+}

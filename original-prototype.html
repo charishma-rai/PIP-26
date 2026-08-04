@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Pip's Way · Smart Department Navigator (Original Monolithic Prototype)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root{
+    --cream:#FDF8F3;
+    --lav:#F1E9FB;
+    --pink:#F7D9E3;
+    --pink-deep:#E8A0BF;
+    --mint:#CDEEE4;
+    --mint-deep:#7FC9AE;
+    --butter:#FCE9BE;
+    --sky:#D8E9F8;
+    --lilac-deep:#B79CE0;
+    --ink:#4A4258;
+    --ink-soft:#8A8296;
+    --line:#4A4258;
+    --white:#FFFFFF;
+    --shadow: 0 8px 24px rgba(120,90,150,0.14);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Quicksand',sans-serif;
+    background:
+      radial-gradient(circle at 8% 12%, #FBE7EF 0%, transparent 40%),
+      radial-gradient(circle at 92% 8%, #E3F2ED 0%, transparent 38%),
+      radial-gradient(circle at 85% 92%, #EAE1FA 0%, transparent 42%),
+      linear-gradient(160deg, var(--cream), #FBF3FA 60%, var(--lav));
+    color:var(--ink);
+    min-height:100vh;
+    padding: 22px 22px 60px;
+  }
+  h1,h2,h3{font-family:'Baloo 2',sans-serif; margin:0;}
+
+  /* ---------- header ---------- */
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    flex-wrap:wrap; gap:14px;
+    max-width:1360px; margin:0 auto 18px;
+  }
+  .brand{display:flex; align-items:center; gap:12px;}
+  .brand-badge{
+    width:52px;height:52px; border-radius:18px;
+    background:linear-gradient(145deg,var(--pink),var(--lilac-deep));
+    display:flex;align-items:center;justify-content:center;
+    font-size:26px; box-shadow: var(--shadow);
+    transform:rotate(-6deg);
+  }
+  .brand h1{font-size:26px; color:var(--ink); letter-spacing:0.2px;}
+  .brand p{margin:2px 0 0; font-size:13.5px; color:var(--ink-soft); font-weight:600;}
+
+  .floor-tabs{display:flex; gap:8px; background:var(--white); padding:6px; border-radius:16px; box-shadow:var(--shadow);}
+  .floor-tab{
+    border:none; font-family:'Baloo 2',sans-serif; font-size:14px; font-weight:600;
+    padding:9px 14px; border-radius:12px; cursor:pointer; color:var(--ink-soft);
+    background:transparent; position:relative; transition:.15s;
+  }
+  .floor-tab.active{background:linear-gradient(135deg,var(--mint-deep),var(--mint)); color:#28503f; box-shadow:0 4px 10px rgba(127,201,174,.4);}
+  .floor-tab.locked{cursor:not-allowed;}
+  .floor-tab.locked:hover .tip{display:block;}
+  .tip{
+    display:none; position:absolute; bottom:120%; left:50%; transform:translateX(-50%);
+    background:var(--ink); color:#fff; font-size:11.5px; padding:7px 10px; border-radius:9px;
+    white-space:nowrap; font-weight:600; font-family:'Quicksand',sans-serif;
+    box-shadow:0 6px 14px rgba(0,0,0,.2); z-index:20;
+  }
+  .tip:after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--ink);}
+
+  /* ---------- layout ---------- */
+  .layout{
+    max-width:1360px; margin:0 auto; display:grid;
+    grid-template-columns: 340px 1fr; gap:20px; align-items:start;
+  }
+  @media (max-width: 980px){ .layout{grid-template-columns:1fr;} }
+
+  .card{
+    background:var(--white); border-radius:22px; box-shadow:var(--shadow);
+    padding:20px;
+  }
+  .panel-title{font-size:15px; font-weight:700; color:var(--ink); display:flex; align-items:center; gap:7px; margin-bottom:10px;}
+  .field-label{font-size:12.5px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.6px; margin:14px 0 6px;}
+  .field-label:first-of-type{margin-top:0;}
+
+  .search-wrap{position:relative;}
+  .search-input{
+    width:100%; padding:12px 14px; border-radius:14px; border:2px solid #F0E6F7;
+    font-family:'Quicksand',sans-serif; font-weight:600; font-size:14.5px; color:var(--ink);
+    background:#FBF9FD; outline:none; transition:.15s;
+  }
+  .search-input:focus{border-color:var(--lilac-deep); background:#fff;}
+  .search-results{
+    position:absolute; top:calc(100% + 6px); left:0; right:0; background:#fff;
+    border-radius:14px; box-shadow:var(--shadow); max-height:230px; overflow-y:auto;
+    z-index:30; display:none; padding:6px;
+  }
+  .search-results.show{display:block;}
+  .result-item{
+    padding:9px 10px; border-radius:10px; cursor:pointer; font-size:13.5px; font-weight:600;
+    display:flex; align-items:center; gap:8px; color:var(--ink);
+  }
+  .result-item:hover{background:var(--lav);}
+  .result-item .cat-dot{width:9px;height:9px;border-radius:50%;flex:none;}
+
+  .chosen-chip{
+    margin-top:8px; display:flex; align-items:center; gap:8px; background:var(--lav);
+    padding:9px 12px; border-radius:13px; font-size:13.5px; font-weight:700; color:var(--ink);
+    min-height:38px;
+  }
+  .chosen-chip.empty{color:var(--ink-soft); font-weight:600; background:#F6F3FA;}
+  .chosen-chip .x{margin-left:auto; cursor:pointer; opacity:.55; font-weight:800;}
+  .chosen-chip .x:hover{opacity:1;}
+
+  .qr-btn{
+    width:100%; margin-top:10px; border:none; border-radius:14px; padding:11px;
+    background:linear-gradient(135deg,var(--sky),#BFE0F5); color:#2b4f66; font-weight:700;
+    font-family:'Baloo 2',sans-serif; font-size:14px; cursor:pointer; display:flex; gap:8px;
+    align-items:center; justify-content:center; transition:.15s;
+  }
+  .qr-btn:hover{transform:translateY(-1px); box-shadow:0 6px 14px rgba(150,190,220,.5);}
+  .qr-btn:active{transform:translateY(0);}
+
+  .swap-row{display:flex; justify-content:center; margin:6px 0 2px;}
+  .swap-btn{
+    border:none; background:var(--butter); width:34px; height:34px; border-radius:50%;
+    cursor:pointer; font-size:14px; box-shadow:0 3px 8px rgba(0,0,0,.08); transition:.2s;
+  }
+  .swap-btn:hover{transform:rotate(180deg);}
+
+  .go-btn{
+    width:100%; margin-top:16px; border:none; border-radius:16px; padding:14px;
+    background:linear-gradient(135deg,var(--pink-deep),var(--lilac-deep)); color:#fff;
+    font-family:'Baloo 2',sans-serif; font-weight:700; font-size:16px; cursor:pointer;
+    box-shadow:0 8px 18px rgba(183,156,224,.45); display:flex; align-items:center; justify-content:center; gap:8px;
+    transition:.15s;
+  }
+  .go-btn:hover{transform:translateY(-2px); box-shadow:0 10px 22px rgba(183,156,224,.55);}
+  .go-btn:disabled{background:#E4DEED; color:#a89fba; box-shadow:none; cursor:not-allowed; transform:none;}
+
+  .route-card{margin-top:16px; display:none;}
+  .route-card.show{display:block;}
+  .route-stats{display:flex; gap:10px; margin:12px 0;}
+  .stat{flex:1; background:var(--cream); border-radius:14px; padding:10px 8px; text-align:center;}
+  .stat b{display:block; font-family:'Baloo 2',sans-serif; font-size:19px; color:var(--ink);}
+  .stat span{font-size:11px; color:var(--ink-soft); font-weight:700; text-transform:uppercase;}
+  .steps{list-style:none; margin:6px 0 0; padding:0; max-height:220px; overflow-y:auto;}
+  .steps li{
+    display:flex; gap:10px; align-items:flex-start; padding:8px 0; font-size:13.5px; font-weight:600;
+    border-bottom:1px dashed #EEE6F5;
+  }
+  .steps li:last-child{border-bottom:none;}
+  .steps .num{
+    width:20px;height:20px; border-radius:50%; background:var(--mint); color:#28503f; flex:none;
+    display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; font-family:'Baloo 2';
+  }
+
+  .legend{display:flex; flex-wrap:wrap; gap:8px 14px; margin-top:14px;}
+  .legend-item{display:flex; align-items:center; gap:6px; font-size:12px; color:var(--ink-soft); font-weight:700;}
+  .legend-dot{width:11px;height:11px;border-radius:4px;}
+
+  /* ---------- map ---------- */
+  .map-card{padding:14px; position:relative; overflow:hidden;}
+  .map-header{display:flex; justify-content:space-between; align-items:center; padding:6px 10px 10px;}
+  .map-header h2{font-size:16px;}
+  .map-header .sub{font-size:12px; color:var(--ink-soft); font-weight:700;}
+  .map-scroll{ width:100%; border-radius:16px; background:#FCFBFE; overflow:auto; max-height:78vh;}
+  svg#floorplan{display:block; width:100%; height:auto;}
+
+  .room-rect{stroke-linejoin:round; cursor:pointer; transition:fill .12s;}
+  .room-rect:hover{fill:rgba(183,156,224,0.22) !important;}
+  .room-label{
+    font-family:'Baloo 2',sans-serif; font-weight:600; pointer-events:none; fill:#3c3548;
+  }
+  .room-sublabel{font-family:'Quicksand',sans-serif; font-weight:700; pointer-events:none; fill:#6b6278;}
+  .courtyard{fill:#F7FAFC;}
+  .courtyard-tag{font-family:'Quicksand'; font-weight:700; fill:#9aa7b0; pointer-events:none;}
+  .stair-badge{font-size:9px; font-weight:800; fill:#a5762f;}
+
+  .node-dot{fill:#fff; stroke:#c9bfe0; stroke-width:2; opacity:0; }
+  .pin{cursor:pointer;}
+  .pin-from{filter:drop-shadow(0 3px 5px rgba(232,160,191,.6));}
+  .pin-to{filter:drop-shadow(0 3px 5px rgba(127,201,174,.6));}
+
+  .path-line{fill:none; stroke:#B79CE0; stroke-width:7; stroke-linecap:round; stroke-linejoin:round; opacity:.85;}
+  .path-line-dash{fill:none; stroke:#fff; stroke-width:2.4; stroke-linecap:round; stroke-dasharray:2 12; opacity:.95;}
+  .walker{font-size:22px;}
+
+  .lock-modal{
+    position:fixed; inset:0; background:rgba(70,55,90,.35); display:none; align-items:center; justify-content:center; z-index:99;
+  }
+  .lock-modal.show{display:flex;}
+  .lock-box{
+    background:#fff; border-radius:22px; padding:26px 28px; max-width:320px; text-align:center; box-shadow:var(--shadow);
+  }
+  .lock-box .emoji{font-size:40px;}
+  .lock-box h3{margin:10px 0 6px; font-size:18px;}
+  .lock-box p{font-size:13.5px; color:var(--ink-soft); font-weight:600; margin:0 0 16px; line-height:1.5;}
+  .lock-box button{
+    border:none; background:linear-gradient(135deg,var(--pink-deep),var(--lilac-deep)); color:#fff;
+    font-family:'Baloo 2'; font-weight:700; padding:10px 22px; border-radius:13px; cursor:pointer;
+  }
+
+  .toast{
+    position:fixed; bottom:26px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--ink); color:#fff; padding:12px 20px; border-radius:14px; font-weight:700;
+    font-size:13.5px; box-shadow:0 10px 24px rgba(0,0,0,.25); opacity:0; pointer-events:none; transition:.25s; z-index:60;
+    display:flex; align-items:center; gap:8px;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  footer{max-width:1360px; margin:22px auto 0; text-align:center; color:var(--ink-soft); font-size:12.5px; font-weight:600;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-badge">🐣</div>
+    <div>
+      <h1>Pip's Way</h1>
+      <p>Smart Department Navigator · Monolithic Original Prototype</p>
+    </div>
+  </div>
+  <div class="floor-tabs" id="floorTabs"></div>
+</div>
+
+<div class="layout">
+  <!-- LEFT PANEL -->
+  <div class="card">
+    <div class="panel-title">🧭 Plan your route</div>
+
+    <div class="field-label">📍 I am starting at…</div>
+    <div class="search-wrap">
+      <input class="search-input" id="fromInput" placeholder="Search a room, e.g. Store Room" autocomplete="off"/>
+      <div class="search-results" id="fromResults"></div>
+    </div>
+    <div class="chosen-chip empty" id="fromChip">Nothing selected yet</div>
+    <button class="qr-btn" id="qrBtn">📷 Scan QR to detect my location</button>
+    <button class="qr-btn" id="qrGenBtn" style="margin-top:8px;">🖨️ Generate location QR codes</button>
+
+    <div class="swap-row"><button class="swap-btn" id="swapBtn" title="Swap">⇅</button></div>
+
+    <div class="field-label">🎯 I want to go to…</div>
+    <div class="search-wrap">
+      <input class="search-input" id="toInput" placeholder="Search a room, e.g. AIML Lab 2" autocomplete="off"/>
+      <div class="search-results" id="toResults"></div>
+    </div>
+    <div class="chosen-chip empty" id="toChip">Nothing selected yet</div>
+
+    <button class="go-btn" id="goBtn" disabled>🐾 Find my way</button>
+
+    <div class="route-card" id="routeCard">
+      <div class="field-label">Route found</div>
+      <div class="route-stats">
+        <div class="stat"><b id="statSteps">–</b><span>waypoints</span></div>
+        <div class="stat"><b id="statDist">–</b><span>meters~</span></div>
+        <div class="stat"><b id="statTime">–</b><span>min walk</span></div>
+      </div>
+      <ol class="steps" id="stepsList"></ol>
+    </div>
+
+    <div class="legend" id="legend"></div>
+  </div>
+
+  <!-- MAP -->
+  <div class="card map-card">
+    <div class="map-header">
+      <h2>Ground Floor</h2>
+      <div class="sub" id="mapSub">Tap any room to preview · search on the left to route</div>
+    </div>
+    <div class="map-scroll">
+      <svg id="floorplan" viewBox="0 0 1594 2255" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+  </div>
+</div>
+
+<footer>Ground floor is a live proof of concept · graph-based A* pathfinding · architecture scales to all 5 floors, with stairwells linking each level 🌿</footer>
+
+<div class="lock-modal" id="lockModal">
+  <div class="lock-box">
+    <div class="emoji">🔒🪜</div>
+    <h3 id="lockTitle">This staircase continues upward</h3>
+    <p id="lockText">Multi-floor routing is on the roadmap — for this proof of concept, only the Ground Floor graph is wired up.</p>
+    <button onclick="document.getElementById('lockModal').classList.remove('show')">Got it</button>
+  </div>
+</div>
+
+<div class="lock-modal" id="qrGenModal">
+  <div class="lock-box" style="max-width:560px;">
+    <h3 style="margin-bottom:4px;">🖨️ Location QR codes</h3>
+    <p style="margin-top:0;">Print one of these and stick it up at the matching spot. Scanning it opens Pip's Way with "I am starting at…" already filled in — no typing needed.</p>
+    <div id="qrGenGrid" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:14px; text-align:left; max-height:52vh; overflow-y:auto; margin-bottom:10px;"></div>
+    <button onclick="document.getElementById('qrGenModal').classList.remove('show')">Close</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================= DATA ============================= */
+const CATS = {
+  office:   {label:"Office / Admin",   color:"#FCE9BE", dot:"#E7C77E"},
+  facility: {label:"Shared Facility",  color:"#F3E4FB", dot:"#C9A3E8"},
+  academic: {label:"Academic Dept.",   color:"#D9F0E8", dot:"#7FC9AE"},
+  lab:      {label:"Lab / Classroom",  color:"#DCEBFC", dot:"#8FBBE8"},
+  washroom: {label:"Washroom",         color:"#E7E9EE", dot:"#AEB4C2"},
+  stair:    {label:"Staircase",        color:"#EFE7DA", dot:"#B99A63"},
+  entrance: {label:"Entrance",         color:"#FBD9E3", dot:"#E38FAE"},
+  courtyard:{label:"Courtyard (open-air)", color:"#F7FAFC", dot:"#C4CFD6"}
+};
+
+const ROOMS = [
+ {id:"washroom_top", name:"Washroom", x:48,y:70,w:132,h:250, cat:"washroom", node:[114,300]},
+ {id:"placement_centre", name:"Placement Centre", x:180,y:70,w:251,h:166, cat:"office", node:[305,236]},
+ {id:"guest_room", name:"Guest Room", x:431,y:70,w:142,h:166, cat:"facility", node:[500,236]},
+ {id:"placement_gd", name:"Placement GD Room", x:573,y:70,w:283,h:166, cat:"facility", node:[710,236]},
+ {id:"health_centre", name:"Health Centre", x:856,y:70,w:178,h:166, cat:"facility", node:[940,236]},
+ {id:"vice_principal", name:"Vice Principal", x:1034,y:70,w:103,h:166, cat:"office", node:[1085,236]},
+ {id:"principal_office", name:"Principal Office", x:1137,y:70,w:153,h:166, cat:"office", node:[1210,236]},
+ {id:"foundation_office", name:"Foundation Office", x:1365,y:70,w:166,h:151, cat:"office", node:[1450,145]},
+ {id:"stair_e", name:"Stair E", x:1365,y:225,w:166,h:65, cat:"stair", node:[1450,290]},
+
+ {id:"placement_cell", name:"Placement Cell · Career Guidance · Alumni Centre", x:48,y:320,w:164,h:685, cat:"facility", node:[130,650]},
+ {id:"board_room", name:"Board Room", x:48,y:1005,w:164,h:210, cat:"facility", node:[130,1100]},
+
+ {id:"iqac_cell", name:"IQAC Cell", x:675,y:311,w:162,h:216, cat:"office", node:[756,320]},
+ {id:"establishment_office", name:"Establishment Office", x:675,y:527,w:162,h:213, cat:"office", node:[756,600]},
+ {id:"stair_a", name:"Stair A", x:497,y:653,w:176,h:87, cat:"stair", node:[585,690]},
+
+ {id:"principal_chamber", name:"Principal Chamber", x:1309,y:318,w:222,h:422, cat:"office", node:[1420,500]},
+
+ {id:"seminar_hall", name:"Seminar Hall (Ground Floor)", x:265,y:786,w:410,h:207, cat:"facility", node:[470,890]},
+ {id:"maintenance_office", name:"Maintenance Office", x:734,y:872,w:159,h:194, cat:"office", node:[813,960]},
+ {id:"academic_section", name:"Academic Section", x:1120,y:819,w:228,h:174, cat:"office", node:[1235,900]},
+ {id:"stair_c", name:"Stair C", x:1012,y:819,w:108,h:174, cat:"stair", node:[1065,900]},
+ {id:"washroom_academic", name:"Washroom", x:1347,y:819,w:182,h:174, cat:"washroom", node:[1438,900]},
+
+ {id:"records_room", name:"Records Room", x:891,y:1197,w:152,h:190, cat:"office", node:[965,1290]},
+ {id:"dept_cse_hod", name:"Department of CSE (HOD)", x:1044,y:1197,w:485,h:190, cat:"academic", node:[1290,1290]},
+
+ {id:"dept_library", name:"Central Lab", x:1349,y:1387,w:182,h:470, cat:"lab", node:[1440,1600]},
+ {id:"washroom_lib", name:"Washroom", x:1349,y:1857,w:181,h:76, cat:"washroom", node:[1440,1895]},
+
+ {id:"store_room", name:"Store Room", x:461,y:1372,w:203,h:183, cat:"office", node:[560,1450]},
+ {id:"stair_b", name:"Stair B", x:371,y:1372,w:90,h:183, cat:"stair", node:[415,1450]},
+ {id:"guests_lounge", name:"Guest's Lounge", x:371,y:1555,w:293,h:193, cat:"facility", node:[520,1650]},
+ {id:"help_desk", name:"Help Desk", x:371,y:1748,w:193,h:113, cat:"facility", node:[465,1800]},
+ {id:"dept_cse_office", name:"Dept. of CSE (Office)", x:664,y:1555,w:183,h:417, cat:"academic", node:[750,1750]},
+
+ {id:"print_society", name:"Print & Student Society & Stationary", x:51,y:1372,w:209,h:181, cat:"office", node:[155,1460]},
+ {id:"admin_office", name:"Admin Office", x:51,y:1630,w:211,h:180, cat:"office", node:[155,1720]},
+ {id:"fee_counter", name:"Fee Counter", x:51,y:1914,w:134,h:58, cat:"office", node:[115,1943]},
+ {id:"lounge", name:"Lounge", x:51,y:1972,w:171,h:175, cat:"facility", node:[135,2060]},
+
+ {id:"admission_section", name:"Admission Section", x:302,y:1972,w:269,h:175, cat:"office", node:[435,2060]},
+ {id:"stair_d", name:"Stair D", x:571,y:1972,w:95,h:175, cat:"stair", node:[618,2060]},
+ {id:"aiml_lab2", name:"AIML Lab 2", x:666,y:1972,w:346,h:175, cat:"lab", node:[840,2060]},
+ {id:"comp_lab4", name:"Comp Lab 4", x:1012,y:1972,w:275,h:175, cat:"lab", node:[1150,2060]},
+ {id:"comp_lab5", name:"Comp Lab 5", x:1287,y:1972,w:244,h:175, cat:"lab", node:[1410,2060]},
+
+ {id:"entrance_west", name:"Main Entrance (West)", x:null,y:null,w:0,h:0, cat:"entrance", node:[40,1935], virtual:true},
+ {id:"entrance_south", name:"Main Entrance (South)", x:null,y:null,w:0,h:0, cat:"entrance", node:[262,2145], virtual:true},
+];
+
+const PATHWAY = [
+  [[691,769],[707,1334]],
+  [[1279,286],[1284,762]],
+  [[707,1334],[852,1334],[870,1426]],
+  [[305,1340],[707,1334]],
+  [[252,1934],[867,1932]],
+  [[855,271],[867,762]],
+  [[882,1934],[1315,1934]],
+  [[252,1866],[305,1866],[305,1340]],
+  [[241,757],[691,769]],
+  [[870,1426],[1312,1426],[1315,1934]],
+  [[1284,762],[1489,772]],
+  [[271,2120],[252,1934]],
+  [[855,271],[1279,286]],
+  [[66,1864],[252,1866]],
+  [[938,763],[945,951]],
+  [[236,1278],[64,1276]],
+  [[1279,286],[1316,286],[1320,86]],
+  [[938,763],[1111,763],[1284,762]],
+  [[855,271],[226,271],[241,757]],
+  [[305,1340],[236,1278]],
+  [[1318,1945],[1496,1947]],
+  [[870,1426],[867,1932]],
+  [[241,757],[236,1278]],
+  [[867,762],[938,763]],
+  [[691,769],[867,762]],
+  [[252,1934],[252,1866]],
+  [[212,1937],[252,1934]],
+  [[1318,1945],[1318,1960]],
+  [[867,1932],[882,1934]],
+  [[882,1941],[882,1934]],
+  [[1318,1945],[1315,1934]],
+];
+
+const COURTYARDS = [
+ {name:"Courtyard 3", x:269,y:309,w:404,h:344},
+ {name:"Courtyard 4", x:899,y:314,w:354,h:426},
+ {name:"Courtyard 2", x:269,y:1021,w:410,h:197},
+ {name:"Courtyard 2", x:379,y:1218,w:300,h:112},
+ {name:"Courtyard 1", x:906,y:1615,w:379,h:303},
+ {name:"Courtyard 1", x:1097,y:1465,w:190,h:150},
+];
+
+/* ============================= GRAPH BUILD ============================= */
+const NODES = {};
+const ADJ = {};
+function keyOf(x,y){ return Math.round(x)+","+Math.round(y); }
+function addNode(x,y){ const id=keyOf(x,y); if(!NODES[id]) NODES[id]={x,y}; return id; }
+function addEdge(a,b){
+  if(a===b) return;
+  const w = Math.hypot(NODES[a].x-NODES[b].x, NODES[a].y-NODES[b].y);
+  (ADJ[a]=ADJ[a]||[]).push({to:b,w});
+  (ADJ[b]=ADJ[b]||[]).push({to:a,w});
+}
+function removeEdge(a,b){
+  if(ADJ[a]) ADJ[a]=ADJ[a].filter(e=>e.to!==b);
+  if(ADJ[b]) ADJ[b]=ADJ[b].filter(e=>e.to!==a);
+}
+function dist(a,b){ return Math.hypot(NODES[a].x-NODES[b].x, NODES[a].y-NODES[b].y); }
+
+const pwSegments = [];
+PATHWAY.forEach(poly=>{
+  for(let i=0;i<poly.length-1;i++){
+    const [x1,y1]=poly[i], [x2,y2]=poly[i+1];
+    const aId=addNode(x1,y1), bId=addNode(x2,y2);
+    addEdge(aId,bId);
+    pwSegments.push({aId,bId,x1,y1,x2,y2});
+  }
+});
+
+function nearestOnSegment(px,py, seg){
+  const dx=seg.x2-seg.x1, dy=seg.y2-seg.y1;
+  const len2 = dx*dx+dy*dy;
+  let t = len2===0 ? 0 : ((px-seg.x1)*dx+(py-seg.y1)*dy)/len2;
+  t = Math.max(0, Math.min(1,t));
+  const x=seg.x1+t*dx, y=seg.y1+t*dy;
+  return {x,y,t, d:Math.hypot(px-x,py-y)};
+}
+
+const VIS_RECTS = [];
+ROOMS.forEach(r=>{ if(!r.virtual) VIS_RECTS.push({id:r.id, x:r.x, y:r.y, w:r.w, h:r.h}); });
+COURTYARDS.forEach((c,i)=> VIS_RECTS.push({id:'courtyard'+i, x:c.x, y:c.y, w:c.w, h:c.h}));
+
+function segIntersectsRect(x1,y1,x2,y2, rx,ry,rw,rh, shrink=1){
+  let rx2=rx+shrink, ry2=ry+shrink, rw2=rw-2*shrink, rh2=rh-2*shrink;
+  if(rw2<=0||rh2<=0){ rx2=rx; ry2=ry; rw2=rw; rh2=rh; }
+  const xmin=rx2, xmax=rx2+rw2, ymin=ry2, ymax=ry2+rh2;
+  const inside=(px,py)=> px>=xmin&&px<=xmax&&py>=ymin&&py<=ymax;
+  if(inside(x1,y1)||inside(x2,y2)) return true;
+  const ccw=(px,py,qx,qy,rx_,ry_)=> (qx-px)*(ry_-py)-(qy-py)*(rx_-px);
+  const segSeg=(ax,ay,bx,by,cx,cy,dx,dy)=>{
+    const d1=ccw(cx,cy,dx,dy,ax,ay), d2=ccw(cx,cy,dx,dy,bx,by);
+    const d3=ccw(ax,ay,bx,by,cx,cy), d4=ccw(ax,ay,bx,by,dx,dy);
+    return ((d1>0&&d2<0)||(d1<0&&d2>0)) && ((d3>0&&d4<0)||(d3<0&&d4>0));
+  };
+  const edges=[[xmin,ymin,xmax,ymin],[xmax,ymin,xmax,ymax],[xmax,ymax,xmin,ymax],[xmin,ymax,xmin,ymin]];
+  for(const [ex1,ey1,ex2,ey2] of edges){ if(segSeg(x1,y1,x2,y2, ex1,ey1,ex2,ey2)) return true; }
+  return false;
+}
+function hasClearLOS(x1,y1,x2,y2, excludeId){
+  for(const rect of VIS_RECTS){
+    if(rect.id===excludeId) continue;
+    if(segIntersectsRect(x1,y1,x2,y2, rect.x,rect.y,rect.w,rect.h)) return false;
+  }
+  return true;
+}
+
+const roomProjections = {};
+ROOMS.forEach(r=>{
+  const [px,py]=r.node;
+  let best=null, bestSeg=-1;
+  pwSegments.forEach((seg,i)=>{
+    const p = nearestOnSegment(px,py,seg);
+    if(best && p.d >= best.d) return;
+    if(hasClearLOS(px,py,p.x,p.y,r.id)){ best=p; bestSeg=i; }
+  });
+  r._pathwayDist = best ? best.d : 0;
+  if(bestSeg>=0) (roomProjections[bestSeg] = roomProjections[bestSeg] || []).push({roomId:r.id, t:best.t, x:best.x, y:best.y});
+});
+
+pwSegments.forEach((seg,i)=>{
+  const rooms = roomProjections[i];
+  if(!rooms || !rooms.length) return;
+  rooms.sort((a,b)=>a.t-b.t);
+  removeEdge(seg.aId, seg.bId);
+  let prevId = seg.aId;
+  rooms.forEach(rp=>{
+    let nodeId;
+    if(rp.t<=0.015) nodeId=seg.aId;
+    else if(rp.t>=0.985) nodeId=seg.bId;
+    else nodeId=addNode(rp.x, rp.y);
+    if(nodeId!==prevId) addEdge(prevId, nodeId);
+    if(!NODES[rp.roomId]){
+      const rm = ROOMS.find(r=>r.id===rp.roomId);
+      NODES[rp.roomId] = {x:rm.node[0], y:rm.node[1]};
+    }
+    addEdge(rp.roomId, nodeId);
+    prevId = nodeId;
+  });
+  if(prevId!==seg.bId) addEdge(prevId, seg.bId);
+});
+
+ROOMS.forEach(r=>{ if(!NODES[r.id]) NODES[r.id]={x:r.node[0], y:r.node[1]}; });
+
+function astar(start, goal){
+  const open = new Set([start]);
+  const cameFrom = {};
+  const g = {[start]:0};
+  const h = id => Math.hypot(NODES[id].x-NODES[goal].x, NODES[id].y-NODES[goal].y);
+  const f = {[start]: h(start)};
+  while(open.size){
+    let cur=null, best=Infinity;
+    for(const n of open){ if((f[n]??Infinity) < best){best=f[n]; cur=n;} }
+    if(cur===goal){
+      const path=[cur];
+      while(cameFrom[cur]){ cur=cameFrom[cur]; path.unshift(cur); }
+      return path;
+    }
+    open.delete(cur);
+    for(const {to,w} of (ADJ[cur]||[])){
+      const tentative = g[cur]+w;
+      if(tentative < (g[to]??Infinity)){
+        cameFrom[to]=cur; g[to]=tentative; f[to]=tentative+h(to);
+        open.add(to);
+      }
+    }
+  }
+  return null;
+}
+
+/* ============================= RENDER MAP ============================= */
+const svg = document.getElementById('floorplan');
+const NS = "http://www.w3.org/2000/svg";
+function el(tag, attrs){ const e=document.createElementNS(NS,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); return e; }
+
+svg.appendChild(el('image',{
+  href:'floorplan.png.png',
+  x:0, y:0, width:1594, height:2255
+}));
+
+const pathLayer = el('g',{id:'pathLayer'});
+const pinLayer = el('g',{id:'pinLayer'});
+svg.appendChild(pathLayer);
+svg.appendChild(pinLayer);
+
+function pinIcon(id, kind){
+  const n = NODES[id];
+  const color = kind==='from' ? '#E8A0BF' : '#7FC9AE';
+  const g = el('g',{class:'pin '+(kind==='from'?'pin-from':'pin-to'), transform:`translate(${n.x},${n.y})`});
+  g.appendChild(el('path',{d:"M0,-34 C10,-34 17,-27 17,-17 C17,-6 0,4 0,4 C0,4 -17,-6 -17,-17 C-17,-27 -10,-34 0,-34 Z", fill:color, stroke:'#fff', 'stroke-width':2.5}));
+  g.appendChild(el('circle',{cx:0,cy:-17,r:6,fill:'#fff'}));
+  return g;
+}
+
+/* ============================= UI STATE ============================= */
+let fromId=null, toId=null;
+
+function label(id){ return ROOMS.find(r=>r.id===id)?.name || id; }
+
+function buildResults(container, query, excludeId, onPick){
+  container.innerHTML='';
+  const q = query.trim().toLowerCase();
+  const list = ROOMS.filter(r=> r.id!==excludeId && r.name.toLowerCase().includes(q)).slice(0,40);
+  if(!list.length){ container.classList.remove('show'); return; }
+  list.forEach(r=>{
+    const item = document.createElement('div');
+    item.className='result-item';
+    item.innerHTML = `<span class="cat-dot" style="background:${CATS[r.cat].dot}"></span>${r.name}`;
+    item.onclick = ()=>{ onPick(r.id); container.classList.remove('show'); };
+    container.appendChild(item);
+  });
+  container.classList.add('show');
+}
+
+const fromInput=document.getElementById('fromInput'), fromResults=document.getElementById('fromResults'), fromChip=document.getElementById('fromChip');
+const toInput=document.getElementById('toInput'), toResults=document.getElementById('toResults'), toChip=document.getElementById('toChip');
+const goBtn=document.getElementById('goBtn');
+
+fromInput.addEventListener('input', ()=> buildResults(fromResults, fromInput.value, toId, pickFrom));
+fromInput.addEventListener('focus', ()=> buildResults(fromResults, fromInput.value, toId, pickFrom));
+toInput.addEventListener('input', ()=> buildResults(toResults, toInput.value, fromId, pickTo));
+toInput.addEventListener('focus', ()=> buildResults(toResults, toInput.value, fromId, pickTo));
+document.addEventListener('click', e=>{
+  if(!e.target.closest('.search-wrap')){ fromResults.classList.remove('show'); toResults.classList.remove('show'); }
+});
+
+function pickFrom(id){
+  if(ROOMS.find(x=>x.id===id).cat==='stair'){ showLock(id); return; }
+  fromId=id; fromInput.value=''; renderChip(fromChip,id,'from'); refreshMap(); tryEnableGo();
+}
+function pickTo(id){
+  if(ROOMS.find(x=>x.id===id).cat==='stair'){ showLock(id); return; }
+  toId=id; toInput.value=''; renderChip(toChip,id,'to'); refreshMap(); tryEnableGo();
+}
+function renderChip(chip,id,kind){
+  chip.classList.remove('empty');
+  chip.innerHTML = `${kind==='from'?'📍':'🎯'} ${label(id)} <span class="x" onclick="clear${kind==='from'?'From':'To'}()">✕</span>`;
+}
+function clearFrom(){ fromId=null; fromChip.className='chosen-chip empty'; fromChip.textContent='Nothing selected yet'; refreshMap(); tryEnableGo(); hideRoute(); }
+function clearTo(){ toId=null; toChip.className='chosen-chip empty'; toChip.textContent='Nothing selected yet'; refreshMap(); tryEnableGo(); hideRoute(); }
+function tryEnableGo(){ goBtn.disabled = !(fromId && toId); }
+
+document.getElementById('swapBtn').onclick = ()=>{
+  const t=fromId; fromId=toId; toId=t;
+  if(fromId) renderChip(fromChip,fromId,'from'); else {fromChip.className='chosen-chip empty'; fromChip.textContent='Nothing selected yet';}
+  if(toId) renderChip(toChip,toId,'to'); else {toChip.className='chosen-chip empty'; toChip.textContent='Nothing selected yet';}
+  refreshMap(); tryEnableGo();
+};
+
+const qrTargets = ["entrance_west","entrance_south","help_desk","admission_section","seminar_hall","academic_section"];
+document.getElementById('qrBtn').onclick = function(){
+  this.innerHTML = "📡 Scanning…";
+  this.disabled = true;
+  setTimeout(()=>{
+    const pick = qrTargets[Math.floor(Math.random()*qrTargets.length)];
+    pickFrom(pick);
+    this.innerHTML = "📷 Scan QR to detect my location";
+    this.disabled = false;
+    showToast("📍 QR detected — you're at "+label(pick));
+  }, 750);
+};
+
+function locUrl(id){
+  const u = new URL(window.location.href);
+  u.searchParams.set('loc', id);
+  return u.toString();
+}
+document.getElementById('qrGenBtn').onclick = function(){
+  const grid = document.getElementById('qrGenGrid');
+  if(!grid.dataset.built){
+    qrTargets.forEach(id=>{
+      const cell = document.createElement('div');
+      cell.style.textAlign = 'center';
+      const box = document.createElement('div');
+      box.style.background = '#fff';
+      box.style.padding = '8px';
+      box.style.borderRadius = '10px';
+      box.style.display = 'inline-block';
+      cell.appendChild(box);
+      const cap = document.createElement('div');
+      cap.style.fontWeight = '700';
+      cap.style.fontSize = '12.5px';
+      cap.style.marginTop = '6px';
+      cap.textContent = label(id);
+      cell.appendChild(cap);
+      grid.appendChild(cell);
+      new QRCode(box, { text: locUrl(id), width:120, height:120, colorDark:"#4A4258", colorLight:"#ffffff" });
+    });
+    grid.dataset.built = "1";
+  }
+  document.getElementById('qrGenModal').classList.add('show');
+};
+
+(function autoDetectFromQR(){
+  const loc = new URLSearchParams(window.location.search).get('loc');
+  if(loc && ROOMS.find(r=>r.id===loc)){
+    pickFrom(loc);
+    showToast("📍 QR detected — you're at "+label(loc));
+  }
+})();
+
+function showLock(stairId){
+  document.getElementById('lockTitle').textContent = label(stairId)+" leads upward";
+  document.getElementById('lockModal').classList.add('show');
+}
+function showToast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'), 2400);
+}
+
+function refreshMap(){
+  pinLayer.innerHTML='';
+  if(fromId) pinLayer.appendChild(pinIcon(fromId,'from'));
+  if(toId) pinLayer.appendChild(pinIcon(toId,'to'));
+}
+
+/* ============================= ROUTE ============================= */
+document.getElementById('goBtn').onclick = ()=>{
+  if(!fromId||!toId) return;
+  const path = astar(fromId, toId);
+  pathLayer.innerHTML='';
+  if(!path){ showToast("No route found 😢"); return; }
+
+  let d = `M ${NODES[path[0]].x} ${NODES[path[0]].y} `;
+  for(let i=1;i<path.length;i++) d += `L ${NODES[path[i]].x} ${NODES[path[i]].y} `;
+
+  const bg = el('path',{d, class:'path-line'});
+  const dash = el('path',{d, class:'path-line-dash'});
+  pathLayer.appendChild(bg); pathLayer.appendChild(dash);
+
+  pathLayer.appendChild(bg);
+  requestAnimationFrame(()=>{
+    const len = bg.getTotalLength();
+    bg.style.strokeDasharray = len;
+    bg.style.strokeDashoffset = len;
+    bg.style.transition = 'stroke-dashoffset 1.1s ease';
+    requestAnimationFrame(()=> bg.style.strokeDashoffset = 0);
+  });
+
+  const walkerWrap = el('g',{});
+  const walker = el('text',{class:'walker','text-anchor':'middle', dy:'6'});
+  walker.textContent="🐣";
+  const motion = el('animateMotion',{dur:'2.2s', repeatCount:'indefinite', rotate:'auto', path:d});
+  walkerWrap.appendChild(walker);
+  walkerWrap.appendChild(motion);
+  pathLayer.appendChild(walkerWrap);
+
+  let meters=0; for(let i=1;i<path.length;i++) meters += dist(path[i-1],path[i]);
+  meters = meters/22;
+  const mins = Math.max(1, Math.round(meters/70));
+  document.getElementById('statSteps').textContent = path.length;
+  document.getElementById('statDist').textContent = Math.round(meters);
+  document.getElementById('statTime').textContent = mins;
+
+  const namedStops = path.filter(id => ROOMS.find(r=>r.id===id));
+  const stepsList = document.getElementById('stepsList');
+  stepsList.innerHTML='';
+  const majorStops = namedStops.filter((id,i)=> i===0 || i===namedStops.length-1 || ROOMS.find(r=>r.id===id));
+  majorStops.forEach((id,i)=>{
+    const li=document.createElement('li');
+    li.innerHTML = `<span class="num">${i+1}</span> ${label(id)}`;
+    stepsList.appendChild(li);
+  });
+  document.getElementById('routeCard').classList.add('show');
+  document.getElementById('mapSub').textContent = `🐣 Following the trail from ${label(fromId)} to ${label(toId)}`;
+};
+
+function hideRoute(){
+  document.getElementById('routeCard').classList.remove('show');
+  pathLayer.innerHTML='';
+}
+
+/* ============================= FLOOR TABS + LEGEND ============================= */
+const floorTabs = document.getElementById('floorTabs');
+["G","1","2","3","4"].forEach((f,i)=>{
+  const btn=document.createElement('button');
+  btn.className='floor-tab'+(i===0?' active':' locked');
+  btn.innerHTML = i===0? "Ground" : ("Floor "+f+(i>0?' 🔒':''));
+  if(i>0){
+    const tip=document.createElement('span'); tip.className='tip'; tip.textContent='Reachable via staircase — coming soon';
+    btn.appendChild(tip);
+    btn.onclick=()=> showToast("🔒 Floor "+f+" isn't wired up yet in this proof of concept");
+  }
+  floorTabs.appendChild(btn);
+});
+
+const legend = document.getElementById('legend');
+Object.values(CATS).forEach(c=>{
+  const d=document.createElement('div'); d.className='legend-item';
+  d.innerHTML = `<span class="legend-dot" style="background:${c.dot}"></span>${c.label}`;
+  legend.appendChild(d);
+});
+</script>
+</body>
+</html>
